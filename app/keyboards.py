@@ -1,0 +1,21 @@
+from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+
+
+def admin_main_menu() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="👥 Ученики"),
+                KeyboardButton(text="➕ Новые ученики"),
+            ],
+            [
+                KeyboardButton(text="💳 Оплаты"),
+            ],
+            [
+                KeyboardButton(text="📢 Рассылка"),
+                KeyboardButton(text="📊 Статистика"),
+            ],
+        ],
+        resize_keyboard=True,
+        input_field_placeholder="Выберите действие",
+    )
