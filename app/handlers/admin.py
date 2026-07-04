@@ -4,7 +4,13 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import Message
 
 from app.database import get_session
-from app.repositories.students import get_active_students
+from app.repositories.students import (
+    get_active_students,
+    get_all_students,
+    get_new_students,
+    get_overdue_students,
+    get_pending_payments,
+)
 from config import is_admin
 
 
@@ -20,7 +26,21 @@ async def stats_menu(message: Message):
     if not is_admin(message.from_user.id):
         return
 
-    await message.answer("📊 Статистика скоро будет здесь.")
+    with get_session() as session:
+        all_students = get_all_students(session)
+        active_students = get_active_students(session)
+        new_students = get_new_students(session)
+        pending_payments = get_pending_payments(session)
+        overdue_students = get_overdue_students(session)
+
+    await message.answer(
+        "📊 Статистика\n\n"
+        f"Всего учеников в базе: {len(all_students)}\n"
+        f"Активных учеников: {len(active_students)}\n"
+        f"Новых учеников: {len(new_students)}\n"
+        f"Ожидают подтверждения оплаты: {len(pending_payments)}\n"
+        f"Просроченная оплата: {len(overdue_students)}"
+    )
 
 
 @router.message(F.text == "📢 Рассылка")

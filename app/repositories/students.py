@@ -183,3 +183,23 @@ def reject_payment(session: Session, student_id: int) -> Student | None:
     session.refresh(student)
 
     return student
+
+from datetime import date
+
+
+def get_all_students(session: Session) -> list[Student]:
+    stmt = select(Student).order_by(Student.created_at.desc())
+    return list(session.scalars(stmt).all())
+
+
+def get_overdue_students(session: Session) -> list[Student]:
+    today = date.today()
+
+    stmt = (
+        select(Student)
+        .where(Student.active == True)  # noqa: E712
+        .where(Student.payment_date < today)
+        .order_by(Student.payment_date)
+    )
+
+    return list(session.scalars(stmt).all())
