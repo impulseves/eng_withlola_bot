@@ -14,6 +14,7 @@ from app.repositories.students import (
     confirm_payment,
     get_active_students,
     get_new_students,
+    get_pending_payments,
 )
 
 router = Router()
@@ -146,7 +147,7 @@ async def approve_student_notes(message: Message, state: FSMContext):
         f"Стоимость: {student.amount} ₽\n"
         f"Дата оплаты: {student.payment_date.strftime('%d.%m.%Y')}"
     )
-    
+
 @router.callback_query(F.data.startswith("confirm_payment:"))
 async def confirm_payment_callback(callback: CallbackQuery):
     if not is_admin(callback.from_user.id):
@@ -170,3 +171,32 @@ async def confirm_payment_callback(callback: CallbackQuery):
     )
 
     await callback.answer()
+
+@router.message(F.text == "💳 Оплаты")
+async def payments_menu(message: Message):
+    if not is_admin(message.from_user.id):
+        return
+
+    with get_session() as session:
+        pending_students = get_pending_payments(session)
+
+    if not pending_students:
+        await message.answer("💳 Оплаты\n\nОжидающих подтверждения оплат нет.")
+        return
+
+    text = "💳 Ожидают подтверждения оплаты:\n\n"
+
+    for student in pending_students:
+        payment_date = (
+            student.payment_date.strftime("%d.%m.%Y")
+            if student.payment_date
+            else "не указана"
+        )
+
+        text += (
+            f"• {student.name}\n"
+            f"  Сумма: {student.amount} ₽\n"
+            f"  Дата оплаты: {payment_date}\n\n"
+        )
+
+    await message.answer(text)

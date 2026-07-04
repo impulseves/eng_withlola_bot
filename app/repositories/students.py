@@ -160,3 +160,13 @@ def confirm_payment(session: Session, student_id: int) -> Student | None:
     session.refresh(student)
 
     return student
+
+def get_pending_payments(session: Session) -> list[Student]:
+    stmt = (
+        select(Student)
+        .where(Student.payment_pending == True)  # noqa: E712
+        .where(Student.active == True)  # noqa: E712
+        .order_by(Student.payment_date)
+    )
+
+    return list(session.scalars(stmt).all())
