@@ -11,6 +11,7 @@ from config import BOT_TOKEN, is_admin
 
 from app.keyboards import admin_main_menu
 from app.handlers import routers
+from app.scheduler import scheduler
 
 logging.basicConfig(
     level=logging.INFO,
@@ -57,6 +58,7 @@ async def start_handler(message: Message):
 
 async def main():
     init_db()
+    setup_scheduler(bot)
     for router in routers:
         dp.include_router(router)
     logging.info("Бот запускается...")
