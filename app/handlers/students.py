@@ -6,8 +6,9 @@ from aiogram.fsm.state import State, StatesGroup
 from aiogram.types import CallbackQuery, InlineKeyboardButton, InlineKeyboardMarkup, Message
 
 from app.database import get_session
-from app.repositories.students import approve_student, get_active_students, get_new_students
+from app.repositories.students import approve_student, get_active_students, get_new_students, reject_payment
 from config import is_admin
+from app.keyboards import student_main_menu
 
 from app.repositories.students import (
     approve_student,
@@ -148,6 +149,16 @@ async def approve_student_notes(message: Message, state: FSMContext):
         f"Дата оплаты: {student.payment_date.strftime('%d.%m.%Y')}"
     )
 
+    await message.bot.send_message(
+        chat_id=student.telegram_id,
+        text=(
+            "✅ Преподаватель подтвердил вас.\n\n"
+            "Теперь вы можете смотреть информацию об оплате.\n"
+            "Для этого нажмите кнопку «💳 Моя оплата»."
+        ),
+        reply_markup=student_main_menu(),
+    )
+
 @router.callback_query(F.data.startswith("confirm_payment:"))
 async def confirm_payment_callback(callback: CallbackQuery):
     if not is_admin(callback.from_user.id):
@@ -164,7 +175,7 @@ async def confirm_payment_callback(callback: CallbackQuery):
         await callback.answer()
         return
 
-    await callback.message.answer(
+    await callback.message.edit_textr(
         "✅ Оплата подтверждена.\n\n"
         f"Ученик: {student.name}\n"
         f"Следующая дата оплаты: {student.payment_date.strftime('%d.%m.%Y')}"
@@ -200,3 +211,36 @@ async def payments_menu(message: Message):
         )
 
     await message.answer(text)
+
+
+@router.callback_query(F.data.startswith("reject_payment:"))
+async def reject_payment_callback(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer()
+        return
+
+    student_id = int(callback.data.split(":")[1])
+
+    with get_session() as session:
+        student = reject_payment(session, student_id)
+
+    if not student:
+        await callback.message.answer("Не удалось отклонить оплату.")
+        await callback.answer()
+        return
+
+    await callback.bot.send_message(
+        chat_id=student.telegram_id,
+        text=(
+            "❌ Оплата не подтверждена.\n\n"
+            "Пожалуйста, проверьте перевод. "
+            "Если оплата прошла, нажмите «✅ Оплатил» повторно."
+        ),
+    )
+
+    await callback.message.edit_text(
+        "❌ Оплата отклонена.\n\n"
+        f"Ученик: {student.name}\n"
+        "Дата оплаты не изменилась"
+    )
+    await callback.answer()

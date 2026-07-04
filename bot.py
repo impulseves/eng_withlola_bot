@@ -9,9 +9,9 @@ from app.database import get_session, init_db
 from app.repositories.students import get_or_create_student
 from config import BOT_TOKEN, is_admin
 
-from app.keyboards import admin_main_menu
+from app.keyboards import admin_main_menu, student_main_menu
 from app.handlers import routers
-from app.scheduler import scheduler
+from app.scheduler import setup_scheduler
 
 logging.basicConfig(
     level=logging.INFO,
@@ -46,13 +46,14 @@ async def start_handler(message: Message):
         await message.answer(
             "Здравствуйте!\n\n"
             "Вы зарегистрировались в боте.\n"
-            "После подтверждения преподавателем вы будете получать уведомления об оплате."
+            "После подтверждения преподавателем вы будете получать уведомления об оплате.",
         )
     else:
         await message.answer(
             "Здравствуйте!\n\n"
             "Вы уже зарегистрированы в боте.\n"
-            "Если преподаватель вас активировал, скоро здесь появится информация об оплате."
+            "Если преподаватель вас активировал, скоро здесь появится информация об оплате.",
+            reply_markup=student_main_menu(),
         )
 
 

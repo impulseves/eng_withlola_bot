@@ -19,3 +19,14 @@ def admin_main_menu() -> ReplyKeyboardMarkup:
         resize_keyboard=True,
         input_field_placeholder="Выберите действие",
     )
+
+def student_main_menu() -> ReplyKeyboardMarkup:
+    return ReplyKeyboardMarkup(
+        keyboard=[
+            [
+                KeyboardButton(text="💳 Моя оплата"),
+            ],
+        ],
+        resize_keyboard=True,
+        input_field_placeholder="Выберите действие",
+    )

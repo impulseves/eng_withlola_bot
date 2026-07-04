@@ -170,3 +170,16 @@ def get_pending_payments(session: Session) -> list[Student]:
     )
 
     return list(session.scalars(stmt).all())
+
+def reject_payment(session: Session, student_id: int) -> Student | None:
+    student = session.get(Student, student_id)
+
+    if not student:
+        return None
+
+    student.payment_pending = False
+
+    session.commit()
+    session.refresh(student)
+
+    return student

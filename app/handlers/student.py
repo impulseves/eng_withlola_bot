@@ -64,8 +64,12 @@ async def student_paid_callback(callback: CallbackQuery):
             inline_keyboard=[
                 [
                     InlineKeyboardButton(
-                        text="✅ Подтвердить оплату",
+                        text="✅ Подтвердить",
                         callback_data=f"confirm_payment:{student.id}",
+                    ),
+                    InlineKeyboardButton(
+                          text="❌ Оплата не прошла",
+                         callback_data=f"reject_payment:{student.id}",
                     )
                 ]
             ]
