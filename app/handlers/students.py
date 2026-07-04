@@ -9,6 +9,12 @@ from app.database import get_session
 from app.repositories.students import approve_student, get_active_students, get_new_students
 from config import is_admin
 
+from app.repositories.students import (
+    approve_student,
+    confirm_payment,
+    get_active_students,
+    get_new_students,
+)
 
 router = Router()
 
@@ -140,4 +146,27 @@ async def approve_student_notes(message: Message, state: FSMContext):
         f"Стоимость: {student.amount} ₽\n"
         f"Дата оплаты: {student.payment_date.strftime('%d.%m.%Y')}"
     )
+    
+@router.callback_query(F.data.startswith("confirm_payment:"))
+async def confirm_payment_callback(callback: CallbackQuery):
+    if not is_admin(callback.from_user.id):
+        await callback.answer()
+        return
 
+    student_id = int(callback.data.split(":")[1])
+
+    with get_session() as session:
+        student = confirm_payment(session, student_id)
+
+    if not student:
+        await callback.message.answer("Не удалось подтвердить оплату.")
+        await callback.answer()
+        return
+
+    await callback.message.answer(
+        "✅ Оплата подтверждена.\n\n"
+        f"Ученик: {student.name}\n"
+        f"Следующая дата оплаты: {student.payment_date.strftime('%d.%m.%Y')}"
+    )
+
+    await callback.answer()

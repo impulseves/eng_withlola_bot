@@ -127,3 +127,36 @@ def deactivate_student(session: Session, student_id: int) -> Student | None:
     session.commit()
     session.refresh(student)
     return student
+
+from calendar import monthrange
+from datetime import date
+
+
+def add_one_month(current_date: date) -> date:
+    month = current_date.month + 1
+    year = current_date.year
+
+    if month > 12:
+        month = 1
+        year += 1
+
+    last_day = monthrange(year, month)[1]
+    day = min(current_date.day, last_day)
+
+    return date(year, month, day)
+
+
+def confirm_payment(session: Session, student_id: int) -> Student | None:
+    student = session.get(Student, student_id)
+
+    if not student or not student.payment_date:
+        return None
+
+    student.last_payment_date = student.payment_date
+    student.payment_date = add_one_month(student.payment_date)
+    student.payment_pending = False
+
+    session.commit()
+    session.refresh(student)
+
+    return student
