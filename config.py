@@ -20,11 +20,12 @@ if not ADMIN_IDS_RAW:
     raise ValueError("ADMIN_IDS не указан в .env")
 
 
-ADMIN_IDS = [
-    int(admin_id.strip())
-    for admin_id in ADMIN_IDS_RAW.split(",")
-    if admin_id.strip()
-]
+ADMIN_IDS = {
+    int(x)
+    for x in os.getenv("ADMIN_IDS", "").split(",")
+    if x
+}
+
 
 def is_admin(user_id: int) -> bool:
     return user_id in ADMIN_IDS
