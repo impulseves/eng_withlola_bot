@@ -10,6 +10,7 @@ def admin_main_menu() -> ReplyKeyboardMarkup:
             ],
             [
                 KeyboardButton(text="💳 Оплаты"),
+                KeyboardButton(text="📜 История оплат"),
             ],
             [
                 KeyboardButton(text="📢 Рассылка"),

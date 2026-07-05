@@ -13,7 +13,7 @@ def payment_button() -> InlineKeyboardMarkup:
         inline_keyboard=[
             [
                 InlineKeyboardButton(
-                    text="✅ Оплатил",
+                    text="✅ Оплачено",
                     callback_data="student_paid",
                 )
             ]

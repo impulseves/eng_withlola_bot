@@ -3,7 +3,7 @@ from datetime import date
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.models import Student
+from app.models import Payment, Student
 
 
 def get_by_telegram_id(session: Session, telegram_id: int) -> Student | None:
@@ -58,7 +58,7 @@ def approve_student(
     student_id: int,
     amount: int,
     payment_date: date,
-    notes: str | None = None,
+    period_weeks: int,
 ) -> Student | None:
     student = session.get(Student, student_id)
 
@@ -67,7 +67,7 @@ def approve_student(
 
     student.amount = amount
     student.payment_date = payment_date
-    student.notes = notes
+    student.period_weeks = period_weeks
     student.approved = True
     student.active = True
 
@@ -75,6 +75,7 @@ def approve_student(
     session.refresh(student)
 
     return student
+
 
 
 def get_new_students(session: Session) -> list[Student]:
@@ -129,31 +130,30 @@ def deactivate_student(session: Session, student_id: int) -> Student | None:
     return student
 
 from calendar import monthrange
-from datetime import date
-
-
-def add_one_month(current_date: date) -> date:
-    month = current_date.month + 1
-    year = current_date.year
-
-    if month > 12:
-        month = 1
-        year += 1
-
-    last_day = monthrange(year, month)[1]
-    day = min(current_date.day, last_day)
-
-    return date(year, month, day)
+from datetime import date, datetime, timedelta
 
 
 def confirm_payment(session: Session, student_id: int) -> Student | None:
     student = session.get(Student, student_id)
 
-    if not student or not student.payment_date:
+    if not student or not student.payment_date or not student.amount:
         return None
 
+    payment = Payment(
+        student_id=student.id,
+        amount=student.amount,
+        due_date=student.payment_date,
+        status="confirmed",
+    )
+
+    session.add(payment)
+
     student.last_payment_date = student.payment_date
-    student.payment_date = add_one_month(student.payment_date)
+    student.payment_date = (
+        student.payment_date +
+        timedelta(weeks=student.period_weeks)
+)
+
     student.payment_pending = False
 
     session.commit()
@@ -203,3 +203,53 @@ def get_overdue_students(session: Session) -> list[Student]:
     )
 
     return list(session.scalars(stmt).all())
+
+def get_student_payments(session: Session, student_id: int) -> list[Payment]:
+    stmt = (
+        select(Payment)
+        .where(Payment.student_id == student_id)
+        .order_by(Payment.confirmed_at.desc())
+    )
+
+    return list(session.scalars(stmt).all())
+
+def get_by_id(session: Session, student_id: int) -> Student | None:
+    return session.get(Student, student_id)
+
+def update_student_amount(session: Session, student_id: int, amount: int) -> Student | None:
+    student = session.get(Student, student_id)
+
+    if not student:
+        return None
+
+    student.amount = amount
+    session.commit()
+    session.refresh(student)
+
+    return student
+
+
+def update_student_payment_date(session: Session, student_id: int, payment_date: date) -> Student | None:
+    student = session.get(Student, student_id)
+
+    if not student:
+        return None
+
+    student.payment_date = payment_date
+    session.commit()
+    session.refresh(student)
+
+    return student
+
+
+def update_student_period(session: Session, student_id: int, period_weeks: int) -> Student | None:
+    student = session.get(Student, student_id)
+
+    if not student:
+        return None
+
+    student.period_weeks = period_weeks
+    session.commit()
+    session.refresh(student)
+
+    return student

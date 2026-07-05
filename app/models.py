@@ -2,6 +2,8 @@ from datetime import date, datetime
 
 from sqlalchemy import BigInteger, Boolean, Date, DateTime, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import relationship
 
 
 class Base(DeclarativeBase):
@@ -18,7 +20,7 @@ class Student(Base):
     name: Mapped[str] = mapped_column(String(255), nullable=False)
 
     amount: Mapped[int | None] = mapped_column(Integer, nullable=True)
-
+    period_weeks: Mapped[int] = mapped_column(Integer, default=4)
     payment_date: Mapped[date | None] = mapped_column(Date, nullable=True)
     last_payment_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
@@ -30,3 +32,22 @@ class Student(Base):
     notes: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     created_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+
+class Payment(Base):
+    __tablename__ = "payments"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+
+    student_id: Mapped[int] = mapped_column(
+        ForeignKey("students.id"),
+        nullable=False,
+    )
+
+    amount: Mapped[int] = mapped_column(Integer, nullable=False)
+    due_date: Mapped[date] = mapped_column(Date, nullable=False)
+    confirmed_at: Mapped[datetime] = mapped_column(DateTime, default=datetime.utcnow)
+    
+    status: Mapped[str] = mapped_column(String(50), default="confirmed")
+    comment: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    student: Mapped["Student"] = relationship()
